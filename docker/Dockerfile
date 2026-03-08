@@ -8,10 +8,12 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Install system dependencies for PDF processing
+# Install system dependencies for PDF processing + opencv build deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -27,12 +29,13 @@ LABEL description="Production API service for PDF document processing"
 WORKDIR /app
 
 # Install runtime system dependencies
+# Note: libgl1-mesa-glx was removed in Debian 12 (Bookworm); use libgl1 instead
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     tesseract-ocr \
     tesseract-ocr-eng \
     poppler-utils \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     curl \
     && rm -rf /var/lib/apt/lists/*
