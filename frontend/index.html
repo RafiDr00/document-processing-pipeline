@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document Processing Pipeline — Test Client</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6c63ff;
+      --accent-hover: #7c73ff;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --code-bg: #0d1117;
+      --radius: 8px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6c63ff, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    header p { color: var(--muted); font-size: 0.9rem; }
+
+    /* Config row */
+    .config-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 560px) { .config-row { grid-template-columns: 1fr; } }
+
+    label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    input:focus { border-color: var(--accent); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .step-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(108, 99, 255, 0.05);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+    }
+    .drop-zone-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .drop-zone-text { color: var(--muted); font-size: 0.875rem; }
+    .drop-zone-text strong { color: var(--text); }
+    #file-name { margin-top: 0.75rem; font-size: 0.8rem; color: var(--accent); display: none; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition), opacity var(--transition);
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #16a34a; }
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-pending  { background: rgba(245,158,11,.15); color: var(--warning); }
+    .badge-processing { background: rgba(108,99,255,.15); color: var(--accent); }
+    .badge-completed { background: rgba(34,197,94,.15); color: var(--success); }
+    .badge-failed   { background: rgba(239,68,68,.15); color: var(--error); }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 1rem 0;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .progress-bar.indeterminate {
+      width: 40%;
+      animation: slide 1.3s infinite ease-in-out;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+
+    /* Result sections */
+    .result-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .meta-item { background: var(--code-bg); border-radius: var(--radius); padding: 0.75rem; }
+    .meta-item .key { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .meta-item .val { font-size: 0.875rem; font-weight: 600; font-family: ui-monospace, monospace; word-break: break-all; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead tr { background: var(--code-bg); }
+    th { padding: 0.65rem 0.9rem; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* JSON viewer */
+    pre.json {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      font-size: 0.8rem;
+      font-family: ui-monospace, monospace;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .alert-error   { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
+    .alert-success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); color: #86efac; }
+    .alert-info    { background: rgba(108,99,255,.1); border: 1px solid rgba(108,99,255,.3); color: #a5b4fc; }
+
+    /* Health indicator */
+    .health-row { display: flex; align-items: center; gap: 0.75rem; }
+    .health-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--muted);
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+    .health-dot.ok  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .health-dot.err { background: var(--error); }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+    /* Hidden */
+    .hidden { display: none !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>⚡ Document Processing Pipeline</h1>
+    <p>Upload a PDF → extract structured data → download Excel. v2.0.0</p>
+  </header>
+
+  <!-- Config -->
+  <div class="config-row">
+    <div>
+      <label>API Base URL</label>
+      <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000" />
+    </div>
+    <div>
+      <label>API Key (leave blank if not set)</label>
+      <input type="password" id="apiKey" value="" placeholder="sk-..." />
+    </div>
+  </div>
+
+  <!-- Health -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-badge">0</div>
+      Health Check
+    </div>
+    <div class="health-row">
+      <div class="health-dot" id="healthDot"></div>
+      <span id="healthText" style="font-size:0.875rem; color:var(--muted)">Not checked</span>
+      <button class="btn btn-primary" onclick="checkHealth()" style="margin-left:auto;">Check Health</button>
+    </div>
+    <div id="healthDetail" class="hidden" style="margin-top:0.75rem;"></div>
+  </div>
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-badge">1</div>
+      Upload PDF
+    </div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".pdf,application/pdf" />
+      <div class="drop-zone-icon">📄</div>
+      <div class="drop-zone-text"><strong>Click to select</strong> or drag & drop a PDF here</div>
+      <div id="file-name"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
+        ⬆️ Upload &amp; Process
+      </button>
+    </div>
+    <div id="uploadResult"></div>
+  </div>
+
+  <!-- Status polling -->
+  <div class="card hidden" id="statusCard">
+    <div class="card-title">
+      <div class="step-badge">2</div>
+      Processing Status
+      <span id="statusBadge" class="badge badge-pending" style="margin-left:auto;">pending</span>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar indeterminate" id="progressBar"></div>
+    </div>
+    <div class="result-meta" id="docMeta"></div>
+    <div id="statusAlert"></div>
+  </div>
+
+  <!-- Records -->
+  <div class="card hidden" id="recordsCard">
+    <div class="card-title">
+      <div class="step-badge">3</div>
+      Extracted Records
+      <span id="recordCount" style="margin-left:auto; color:var(--muted); font-size:0.8rem; font-weight:400;"></span>
+    </div>
+    <div class="table-wrap hidden" id="tableWrap">
+      <table id="recordsTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="rawJson" class="hidden">
+      <pre class="json" id="jsonPre"></pre>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="toggleViewBtn" onclick="toggleView()">Show Raw JSON</button>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="card hidden" id="exportCard">
+    <div class="card-title">
+      <div class="step-badge">4</div>
+      Export to Excel
+    </div>
+    <p style="font-size:0.875rem; color:var(--muted); margin-bottom:1rem;">
+      Generate and download an <code>.xlsx</code> file with all extracted records.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-success" id="exportBtn" onclick="exportDocument()">
+        📊 Generate Excel Export
+      </button>
+    </div>
+    <div id="exportResult"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  /* ─── Helpers ─── */
+  const $ = id => document.getElementById(id);
+  let currentDocId = null;
+  let pollTimer = null;
+  let showingTable = true;
+
+  function apiBase() {
+    return ($('apiUrl').value || 'http://localhost:8000').replace(/\/$/, '');
+  }
+  function headers(extra = {}) {
+    const h = { 'Accept': 'application/json', ...extra };
+    const key = $('apiKey').value.trim();
+    if (key) h['X-API-Key'] = key;
+    return h;
+  }
+
+  function alert_(containerId, msg, type = 'info') {
+    const icons = { info: 'ℹ️', success: '✅', error: '❌' };
+    $(containerId).innerHTML = `<div class="alert alert-${type}">${icons[type]} ${msg}</div>`;
+  }
+
+  function badgeClass(status) {
+    return { pending: 'badge-pending', processing: 'badge-processing',
+             completed: 'badge-completed', failed: 'badge-failed' }[status] || 'badge-pending';
+  }
+
+  /* ─── Health ─── */
+  async function checkHealth() {
+    const dot = $('healthDot');
+    const txt = $('healthText');
+    dot.className = 'health-dot';
+    txt.textContent = 'Checking…';
+    try {
+      const r = await fetch(`${apiBase()}/health`, { headers: headers() });
+      const d = await r.json();
+      dot.className = 'health-dot ' + (r.ok ? 'ok' : 'err');
+      txt.textContent = r.ok
+        ? `Healthy — v${d.version || '?'} | env: ${d.environment || '?'}`
+        : `Unhealthy (${r.status})`;
+      if (r.ok) {
+        $('healthDetail').innerHTML = `
+          <pre class="json">${JSON.stringify(d, null, 2)}</pre>`;
+        $('healthDetail').classList.remove('hidden');
+      }
+    } catch (e) {
+      dot.className = 'health-dot err';
+      txt.textContent = `Cannot reach API — ${e.message}`;
+    }
+  }
+
+  /* ─── File picker ─── */
+  const fileInput = $('fileInput');
+  const dropZone  = $('dropZone');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') setFile(f);
+    else alert_('uploadResult', 'Only PDF files are accepted.', 'error');
+  });
+
+  function setFile(f) {
+    $('file-name').textContent = `📎 ${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+    $('file-name').style.display = 'block';
+    $('uploadBtn').disabled = false;
+    $('uploadResult').innerHTML = '';
+  }
+
+  /* ─── Upload ─── */
+  async function uploadFile() {
+    const f = fileInput.files[0];
+    if (!f) return alert_('uploadResult', 'Select a PDF first.', 'error');
+
+    $('uploadBtn').disabled = true;
+    $('uploadBtn').textContent = '⏳ Uploading…';
+    $('uploadResult').innerHTML = '';
+    $('statusCard').classList.add('hidden');
+    $('recordsCard').classList.add('hidden');
+    $('exportCard').classList.add('hidden');
+    if (pollTimer) clearInterval(pollTimer);
+
+    const fd = new FormData();
+    fd.append('file', f);
+
+    try {
+      const r = await fetch(`${apiBase()}/api/v1/documents/upload`, {
+        method: 'POST',
+        headers: headers(),
+        body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || JSON.stringify(d));
+
+      currentDocId = d.id;
+      alert_('uploadResult',
+        `Queued — ID: <code>${d.id}</code> | hash: <code>${d.content_hash?.slice(0,16)}…</code>`,
+        'success');
+
+      // Start polling
+      $('statusCard').classList.remove('hidden');
+      $('progressWrap').style.display = 'block';
+      $('progressBar').className = 'progress-bar indeterminate';
+      updateStatusBadge('pending');
+      pollStatus(d.id);
+    } catch (e) {
+      alert_('uploadResult', e.message, 'error');
+    } finally {
+      $('uploadBtn').disabled = false;
+      $('uploadBtn').innerHTML = '⬆️ Upload &amp; Process';
+    }
+  }
+
+  /* ─── Polling ─── */
+  function pollStatus(docId) {
+    let attempts = 0;
+    const MAX = 60; // 60 × 2s = 2min
+    pollTimer = setInterval(async () => {
+      attempts++;
+      if (attempts > MAX) {
+        clearInterval(pollTimer);
+        alert_('statusAlert', 'Timeout waiting for processing. Try refreshing.', 'error');
+        return;
+      }
+      try {
+        const r = await fetch(`${apiBase()}/api/v1/documents/${docId}`, { headers: headers() });
+        const d = await r.json();
+        if (!r.ok) return;
+
+        updateStatusBadge(d.status);
+        renderMeta(d);
+
+        if (d.status === 'completed') {
+          clearInterval(pollTimer);
+          $('progressBar').className = 'progress-bar';
+          $('progressBar').style.width = '100%';
+          alert_('statusAlert', `Extracted ${d.records?.length || 0} record(s) in ${d.processing_time_ms}ms using <strong>${d.extraction_method}</strong>.`, 'success');
+          renderRecords(d.records || []);
+          $('recordsCard').classList.remove('hidden');
+          $('exportCard').classList.remove('hidden');
+        } else if (d.status === 'failed') {
+          clearInterval(pollTimer);
+          $('progressBar').className = 'progress-bar';
+          $('progressBar').style.width = '100%';
+          $('progressBar').style.background = 'var(--error)';
+          alert_('statusAlert', `Processing failed: ${d.error_message || 'unknown error'}`, 'error');
+        }
+      } catch {}
+    }, 2000);
+  }
+
+  function updateStatusBadge(status) {
+    const b = $('statusBadge');
+    b.textContent = status;
+    b.className = `badge ${badgeClass(status)}`;
+  }
+
+  function renderMeta(d) {
+    const fields = [
+      ['Document ID',      d.id?.slice(0, 8) + '…'],
+      ['Filename',         d.original_filename || '—'],
+      ['Pages',            d.page_count ?? '—'],
+      ['Method',           d.extraction_method || '—'],
+      ['Time (ms)',        d.processing_time_ms ?? '—'],
+      ['File Size',        d.file_size_bytes ? `${(d.file_size_bytes/1024).toFixed(1)} KB` : '—'],
+    ];
+    $('docMeta').innerHTML = fields.map(([k, v]) => `
+      <div class="meta-item">
+        <div class="key">${k}</div>
+        <div class="val">${v}</div>
+      </div>`).join('');
+  }
+
+  /* ─── Records table ─── */
+  function renderRecords(records) {
+    $('recordCount').textContent = `${records.length} record${records.length !== 1 ? 's' : ''}`;
+
+    if (records.length === 0) {
+      $('tableWrap').classList.add('hidden');
+      $('jsonPre').textContent = '[]';
+      $('rawJson').classList.remove('hidden');
+      return;
+    }
+
+    // Collect all keys across all records
+    const keys = [...new Set(records.flatMap(r => Object.keys(r.data || {})))];
+
+    $('tableHead').innerHTML = `<tr>${keys.map(k => `<th>${k}</th>`).join('')}<th>Confidence</th></tr>`;
+    $('tableBody').innerHTML = records.map(r =>
+      `<tr>${keys.map(k => `<td>${r.data?.[k] ?? '—'}</td>`).join('')}<td>${r.confidence_score ?? '—'}%</td></tr>`
+    ).join('');
+
+    $('jsonPre').textContent = JSON.stringify(records, null, 2);
+    $('tableWrap').classList.remove('hidden');
+    $('rawJson').classList.add('hidden');
+    showingTable = true;
+    $('toggleViewBtn').textContent = 'Show Raw JSON';
+  }
+
+  function toggleView() {
+    showingTable = !showingTable;
+    $('tableWrap').classList.toggle('hidden', !showingTable);
+    $('rawJson').classList.toggle('hidden', showingTable);
+    $('toggleViewBtn').textContent = showingTable ? 'Show Raw JSON' : 'Show Table';
+  }
+
+  /* ─── Export ─── */
+  async function exportDocument() {
+    if (!currentDocId) return;
+    $('exportBtn').disabled = true;
+    $('exportBtn').textContent = '⏳ Generating…';
+    $('exportResult').innerHTML = '';
+    try {
+      const r = await fetch(`${apiBase()}/api/v1/documents/${currentDocId}/export`, {
+        method: 'POST', headers: headers(),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || JSON.stringify(d));
+
+      // Trigger download
+      const dl = await fetch(`${apiBase()}${d.download_url}`, { headers: headers() });
+      if (!dl.ok) throw new Error('Download failed');
+      const blob = await dl.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `export_${currentDocId.slice(0,8)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      alert_('exportResult', 'Excel file downloaded successfully!', 'success');
+    } catch (e) {
+      alert_('exportResult', e.message, 'error');
+    } finally {
+      $('exportBtn').disabled = false;
+      $('exportBtn').innerHTML = '📊 Generate Excel Export';
+    }
+  }
+
+  // Auto-check health on load
+  window.addEventListener('load', checkHealth);
+</script>
+</body>
+</html>
