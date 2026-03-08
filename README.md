@@ -11,7 +11,7 @@
   <img alt="PostgreSQL 16" src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white">
   <img alt="Redis 7" src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
-  <img alt="CI" src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white">
+  <a href="https://github.com/RafiDr00/Bot-to-scrape-PDFs-and-populate-Excel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/RafiDr00/Bot-to-scrape-PDFs-and-populate-Excel/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
@@ -76,6 +76,8 @@ flowchart LR
 ```
 
 > Full diagrams (sequence, ER, deployment): [`docs/architecture.md`](docs/architecture.md)
+>
+> **Try it now:** open `frontend/index.html` in your browser for a zero-install test UI (upload PDF → view extracted JSON → download Excel).
 
 ---
 
@@ -145,8 +147,8 @@ document-processing-pipeline/
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/RafiDr00/document-processing-pipeline.git
-cd document-processing-pipeline
+git clone https://github.com/RafiDr00/Bot-to-scrape-PDFs-and-populate-Excel.git
+cd Bot-to-scrape-PDFs-and-populate-Excel
 
 # Start all four services (API, Worker, PostgreSQL, Redis)
 docker-compose up --build -d
