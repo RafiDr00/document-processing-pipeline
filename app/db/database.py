@@ -12,8 +12,22 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+
+def _normalize_db_url(url: str) -> str:
+    """Ensure the URL uses the asyncpg driver scheme.
+
+    Render (and Heroku) provide ``postgres://`` or ``postgresql://``;
+    SQLAlchemy async requires ``postgresql+asyncpg://``.
+    """
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _normalize_db_url(settings.DATABASE_URL),
     echo=settings.DATABASE_ECHO,
     pool_pre_ping=True,
     pool_size=settings.DB_POOL_SIZE,

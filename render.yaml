@@ -18,7 +18,7 @@ services:
           name: docpipeline-db
           property: connectionString
       - key: REDIS_URL
-        value: ""
+        value: "redis://localhost:6379/0"
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
