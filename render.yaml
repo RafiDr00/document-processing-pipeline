@@ -1,4 +1,4 @@
-﻿databases:
+databases:
   - name: docpipeline-db
     databaseName: docpipeline
     user: docpipeline
