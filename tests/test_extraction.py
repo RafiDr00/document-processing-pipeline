@@ -42,6 +42,7 @@ class TestPDFExtractor:
             extractor.extract("/nonexistent/path/file.pdf")
 
     def test_extract_empty_pdf(self, empty_pdf_path: str):
+        pytest.importorskip("cv2", reason="OCR test requires opencv-python-headless")
         extractor = PDFExtractor()
         result = extractor.extract(empty_pdf_path)
 
@@ -143,4 +144,7 @@ class TestExcelExporter:
             import pandas as pd
 
             xl = pd.ExcelFile(output_path)
-            assert "Custom Sheet" in xl.sheet_names
+            try:
+                assert "Custom Sheet" in xl.sheet_names
+            finally:
+                xl.close()  # Must close before TemporaryDirectory cleanup (Windows file lock)

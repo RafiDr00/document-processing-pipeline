@@ -10,6 +10,7 @@ import asyncio
 import os
 import tempfile
 from collections.abc import AsyncGenerator, Generator
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -48,6 +49,21 @@ async def setup_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 
+@pytest.fixture(autouse=True)
+def mock_enqueue_job():
+    """Mock enqueue_job to always return True so documents stay 'pending'.
+
+    Prevents the inline fallback from running background processing during tests,
+    which would race with assertions about document status.
+    """
+    with patch(
+        "app.api.routes.enqueue_job",
+        new_callable=AsyncMock,
+        return_value=True,
+    ):
+        yield
+
+
 async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
     """Override database dependency for testing."""
     async with test_session_factory() as session:
@@ -83,21 +99,24 @@ def sample_pdf_path() -> Generator[str, None, None]:
     """Create a minimal valid PDF for testing."""
     import fitz
 
+    # Create temp file then close it before PyMuPDF writes
+    # (Windows locks open file handles; closing first avoids Permission denied)
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        doc = fitz.open()
-        page = doc.new_page()
-        text = (
-            "Invoice No: INV-2025-001\n"
-            "Client Name: Acme Corporation\n"
-            "Date: 2025-01-15\n"
-            "Email: contact@acme.com\n"
-            "Total: $1,250.00\n"
-            "Notes: Payment due in 30 days.\n"
-        )
-        page.insert_text((72, 72), text, fontsize=12)
-        doc.save(f.name)
-        doc.close()
         path = f.name
+
+    doc = fitz.open()
+    page = doc.new_page()
+    text = (
+        "Invoice No: INV-2025-001\n"
+        "Client Name: Acme Corporation\n"
+        "Date: 2025-01-15\n"
+        "Email: contact@acme.com\n"
+        "Total: $1,250.00\n"
+        "Notes: Payment due in 30 days.\n"
+    )
+    page.insert_text((72, 72), text, fontsize=12)
+    doc.save(path)
+    doc.close()
 
     yield path
     os.unlink(path)
@@ -108,12 +127,14 @@ def empty_pdf_path() -> Generator[str, None, None]:
     """Create an empty PDF for testing edge cases."""
     import fitz
 
+    # Create temp file then close it before PyMuPDF writes
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        doc = fitz.open()
-        doc.new_page()
-        doc.save(f.name)
-        doc.close()
         path = f.name
+
+    doc = fitz.open()
+    doc.new_page()
+    doc.save(path)
+    doc.close()
 
     yield path
     os.unlink(path)
