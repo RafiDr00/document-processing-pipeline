@@ -28,10 +28,7 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle."""
-    logger.info(
-        f"Starting {settings.APP_NAME} v{settings.APP_VERSION} "
-        f"[{settings.ENVIRONMENT}]"
-    )
+    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [{settings.ENVIRONMENT}]")
     await init_db()
     logger.info("Database initialized")
     await init_redis()
@@ -79,6 +76,7 @@ app.include_router(documents_router, prefix=settings.API_PREFIX)
 
 
 # ── System Endpoints ────────────────────────
+
 
 @app.get(
     "/health",

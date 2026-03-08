@@ -7,8 +7,6 @@ task queue, and caching layer.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import redis.asyncio as aioredis
 
 from app.core.config import get_settings
@@ -17,10 +15,10 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 settings = get_settings()
 
-_redis_client: Optional[aioredis.Redis] = None
+_redis_client: aioredis.Redis | None = None
 
 
-async def init_redis() -> Optional[aioredis.Redis]:
+async def init_redis() -> aioredis.Redis | None:
     """Create the global Redis connection (called on app startup)."""
     global _redis_client
     try:
@@ -48,6 +46,6 @@ async def close_redis() -> None:
         logger.info("Redis connection closed")
 
 
-def get_redis() -> Optional[aioredis.Redis]:
+def get_redis() -> aioredis.Redis | None:
     """Return the current Redis client (may be ``None``)."""
     return _redis_client

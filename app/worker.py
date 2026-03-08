@@ -28,7 +28,7 @@ from app.core.metrics import (
 from app.core.redis import close_redis, init_redis
 from app.db.database import async_session_factory, close_db, init_db
 from app.models.document import Document, ExtractedRecord, ProcessingStatus
-from app.services.pdf_extractor import PDFExtractor, PDFExtractionError
+from app.services.pdf_extractor import PDFExtractionError, PDFExtractor
 from app.services.queue import dequeue_job
 
 setup_logging()

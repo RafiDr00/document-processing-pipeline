@@ -10,7 +10,6 @@ import hashlib
 import os
 import time
 import uuid
-from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -46,7 +45,7 @@ from app.models.document import (
     ProcessingStatus,
 )
 from app.services.excel_exporter import ExcelExporter, ExcelExportError
-from app.services.pdf_extractor import PDFExtractor, PDFExtractionError
+from app.services.pdf_extractor import PDFExtractionError, PDFExtractor
 from app.services.queue import enqueue_job
 from app.services.storage import get_storage
 
@@ -63,6 +62,7 @@ router = APIRouter(
 # ─────────────────────────────────────────────
 #  Inline Background Processing (fallback when Redis is unavailable)
 # ─────────────────────────────────────────────
+
 
 async def _process_document_inline(document_id: str, file_path: str) -> None:
     """
@@ -143,6 +143,7 @@ async def _process_document_inline(document_id: str, file_path: str) -> None:
 # ─────────────────────────────────────────────
 #  Endpoints
 # ─────────────────────────────────────────────
+
 
 @router.post(
     "/upload",
@@ -309,11 +310,7 @@ async def upload_document(
         },
         404: {
             "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Document not found."}
-                }
-            },
+            "content": {"application/json": {"example": {"detail": "Document not found."}}},
         },
     },
 )
@@ -323,9 +320,7 @@ async def get_document(
 ) -> DocumentResponse:
     """Retrieve full document details including extracted records."""
 
-    result = await db.execute(
-        select(Document).where(Document.id == document_id)
-    )
+    result = await db.execute(select(Document).where(Document.id == document_id))
     document = result.scalar_one_or_none()
 
     if not document:
@@ -366,7 +361,7 @@ async def get_document(
     },
 )
 async def list_documents(
-    status: Optional[ProcessingStatus] = Query(None, description="Filter by status"),
+    status: ProcessingStatus | None = Query(None, description="Filter by status"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Max records to return"),
     db: AsyncSession = Depends(get_db),
@@ -431,11 +426,7 @@ async def list_documents(
         },
         404: {
             "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Document not found."}
-                }
-            },
+            "content": {"application/json": {"example": {"detail": "Document not found."}}},
         },
         400: {
             "model": ErrorResponse,
@@ -455,9 +446,7 @@ async def export_document(
 ) -> ExportResponse:
     """Export a document's extracted records to an Excel file."""
 
-    result = await db.execute(
-        select(Document).where(Document.id == document_id)
-    )
+    result = await db.execute(select(Document).where(Document.id == document_id))
     document = result.scalar_one_or_none()
 
     if not document:
@@ -479,7 +468,7 @@ async def export_document(
         exporter = ExcelExporter()
         records_data = [record.data for record in document.records]
         export_filename = f"{document.original_filename.rsplit('.', 1)[0]}_export.xlsx"
-        output_path = exporter.export(
+        exporter.export(
             records=records_data,
             filename=export_filename,
             sheet_name="Extracted Data",
@@ -505,9 +494,7 @@ async def export_document(
     responses={
         200: {
             "description": "Excel file download",
-            "content": {
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
-            },
+            "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}},
         },
         404: {
             "model": ErrorResponse,
@@ -527,9 +514,7 @@ async def download_export(
 ) -> FileResponse:
     """Download the generated Excel export for a document."""
 
-    result = await db.execute(
-        select(Document).where(Document.id == document_id)
-    )
+    result = await db.execute(select(Document).where(Document.id == document_id))
     document = result.scalar_one_or_none()
 
     if not document:

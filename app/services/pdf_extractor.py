@@ -23,6 +23,7 @@ settings = get_settings()
 
 class PDFExtractionError(Exception):
     """Raised when PDF text extraction fails."""
+
     pass
 
 
@@ -125,9 +126,7 @@ class PDFExtractor:
                     text = page.get_text("text")
                     if text.strip():
                         pages_text.append(text)
-                        logger.debug(
-                            f"Page {page_num}: extracted {len(text)} chars"
-                        )
+                        logger.debug(f"Page {page_num}: extracted {len(text)} chars")
                 full_text = "\n\n".join(pages_text)
                 logger.info(f"Native extraction: {len(full_text)} total chars")
                 return full_text
@@ -139,8 +138,8 @@ class PDFExtractor:
         try:
             import cv2
             import numpy as np
-            from pdf2image import convert_from_path
             import pytesseract
+            from pdf2image import convert_from_path
         except ImportError as e:
             raise PDFExtractionError(
                 f"OCR dependencies not installed ({e}). "
@@ -157,13 +156,9 @@ class PDFExtractor:
                     img_array = np.array(img)
                     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
                     blur = cv2.GaussianBlur(gray, (3, 3), 0)
-                    _, thresh = cv2.threshold(
-                        blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-                    )
+                    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-                    page_text = pytesseract.image_to_string(
-                        thresh, lang=self.ocr_lang
-                    )
+                    page_text = pytesseract.image_to_string(thresh, lang=self.ocr_lang)
                     pages_text.append(page_text)
                     logger.debug(f"OCR page {i}: {len(page_text)} chars")
 
@@ -203,36 +198,30 @@ class PDFExtractor:
         record["ID"] = self._extract_field(
             text, r"(?:ID|Invoice\s*(?:No|Number|#))\s*[:#]?\s*(\S+)"
         )
-        record["Email"] = self._extract_field(
-            text, r"[\w.+-]+@[\w-]+\.[\w.-]+"
-        )
+        record["Email"] = self._extract_field(text, r"[\w.+-]+@[\w-]+\.[\w.-]+")
         record["Date"] = self._extract_date(text)
-        record["Total"] = self._extract_field(
-            text, r"Total\s*[:]*\s*\$?([\d,]+\.?\d*)"
-        )
+        record["Total"] = self._extract_field(text, r"Total\s*[:]*\s*\$?([\d,]+\.?\d*)")
         record["Notes"] = self._extract_field(
             text, r"(?:Notes?|Remarks?|Comments?)\s*[:]\s*(.+?)(?:\n|$)"
         )
 
         # Only add if we extracted at least one meaningful field
-        has_data = any(
-            v and v != "N/A"
-            for k, v in record.items()
-            if k != "Notes"
-        )
+        has_data = any(v and v != "N/A" for k, v in record.items() if k != "Notes")
 
         if has_data:
             records.append(record)
         else:
             # Return a generic record with the raw text summary
-            records.append({
-                "Name": "N/A",
-                "ID": "N/A",
-                "Email": "N/A",
-                "Date": "N/A",
-                "Total": "N/A",
-                "Notes": text[:500] if text else "No text extracted",
-            })
+            records.append(
+                {
+                    "Name": "N/A",
+                    "ID": "N/A",
+                    "Email": "N/A",
+                    "Date": "N/A",
+                    "Total": "N/A",
+                    "Notes": text[:500] if text else "No text extracted",
+                }
+            )
 
         return records
 

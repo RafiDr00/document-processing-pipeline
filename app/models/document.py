@@ -9,10 +9,10 @@ Defines:
 
 import enum
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import (
     Column,
     DateTime,
@@ -29,13 +29,14 @@ from sqlalchemy.orm import relationship
 
 from app.db.database import Base
 
-
 # ─────────────────────────────────────────────
 #  Enums
 # ─────────────────────────────────────────────
 
-class ProcessingStatus(str, enum.Enum):
+
+class ProcessingStatus(enum.StrEnum):
     """Document processing lifecycle states."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -45,6 +46,7 @@ class ProcessingStatus(str, enum.Enum):
 # ─────────────────────────────────────────────
 #  SQLAlchemy ORM Models
 # ─────────────────────────────────────────────
+
 
 class Document(Base):
     """Represents an uploaded PDF document."""
@@ -98,9 +100,7 @@ class ExtractedRecord(Base):
     """A single structured record extracted from a document."""
 
     __tablename__ = "extracted_records"
-    __table_args__ = (
-        Index("ix_records_document_idx", "document_id", "record_index"),
-    )
+    __table_args__ = (Index("ix_records_document_idx", "document_id", "record_index"),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(
@@ -126,12 +126,14 @@ class ExtractedRecord(Base):
 #  Pydantic Schemas — Request/Response
 # ─────────────────────────────────────────────
 
+
 class DocumentUploadResponse(BaseModel):
     """Response returned after uploading a document."""
+
     id: uuid.UUID
     filename: str
     status: ProcessingStatus
-    content_hash: Optional[str] = None
+    content_hash: str | None = None
     message: str = "Document uploaded and queued for processing."
 
     model_config = {"from_attributes": True}
@@ -139,10 +141,11 @@ class DocumentUploadResponse(BaseModel):
 
 class ExtractedRecordResponse(BaseModel):
     """A single extracted record for API responses."""
+
     id: uuid.UUID
     record_index: int
     data: dict[str, Any]
-    confidence_score: Optional[int] = None
+    confidence_score: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -150,15 +153,16 @@ class ExtractedRecordResponse(BaseModel):
 
 class DocumentResponse(BaseModel):
     """Full document details with extracted records."""
+
     id: uuid.UUID
     filename: str
     original_filename: str
     file_size: int
     status: ProcessingStatus
-    error_message: Optional[str] = None
-    page_count: Optional[int] = None
-    extraction_method: Optional[str] = None
-    processing_time_ms: Optional[int] = None
+    error_message: str | None = None
+    page_count: int | None = None
+    extraction_method: str | None = None
+    processing_time_ms: int | None = None
     records: list[ExtractedRecordResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -168,13 +172,14 @@ class DocumentResponse(BaseModel):
 
 class DocumentListItem(BaseModel):
     """Compact document representation for list endpoints."""
+
     id: uuid.UUID
     filename: str
     original_filename: str
     file_size: int
     status: ProcessingStatus
-    page_count: Optional[int] = None
-    extraction_method: Optional[str] = None
+    page_count: int | None = None
+    extraction_method: str | None = None
     record_count: int = 0
     created_at: datetime
     updated_at: datetime
@@ -184,12 +189,14 @@ class DocumentListItem(BaseModel):
 
 class DocumentListResponse(BaseModel):
     """Paginated list of documents."""
+
     total: int
     documents: list[DocumentListItem]
 
 
 class ExportResponse(BaseModel):
     """Response for export operations."""
+
     document_id: uuid.UUID
     export_format: str = "xlsx"
     download_url: str
@@ -198,12 +205,14 @@ class ExportResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     detail: str
-    error_code: Optional[str] = None
+    error_code: str | None = None
 
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str = "healthy"
     version: str
     environment: str

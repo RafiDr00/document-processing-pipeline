@@ -9,9 +9,7 @@ dependencies so tests run with zero infrastructure.
 import asyncio
 import os
 import tempfile
-import uuid
-from typing import AsyncGenerator, Generator
-from unittest.mock import patch
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio

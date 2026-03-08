@@ -9,8 +9,8 @@ import tempfile
 
 import pytest
 
-from app.services.pdf_extractor import PDFExtractor, PDFExtractionError
 from app.services.excel_exporter import ExcelExporter, ExcelExportError
+from app.services.pdf_extractor import PDFExtractionError, PDFExtractor
 
 
 class TestPDFExtractor:
@@ -62,14 +62,10 @@ class TestPDFExtractor:
         text = "Invoice No: INV-12345\nClient Name: John Doe"
         extractor = PDFExtractor()
 
-        invoice = extractor._extract_field(
-            text, r"Invoice\s*No\s*[:]\s*(\S+)"
-        )
+        invoice = extractor._extract_field(text, r"Invoice\s*No\s*[:]\s*(\S+)")
         assert invoice == "INV-12345"
 
-        name = extractor._extract_field(
-            text, r"Client\s*Name\s*[:]\s*(.+?)(?:\n|$)"
-        )
+        name = extractor._extract_field(text, r"Client\s*Name\s*[:]\s*(.+?)(?:\n|$)")
         assert name == "John Doe"
 
     def test_extract_field_no_match(self):
@@ -132,6 +128,7 @@ class TestExcelExporter:
             output_path = exporter.export(records)
 
             import pandas as pd
+
             df = pd.read_excel(output_path)
             # Should be sorted by Name (first priority column available)
             assert df.iloc[0]["Name"] == "Alice"
@@ -141,10 +138,9 @@ class TestExcelExporter:
         with tempfile.TemporaryDirectory() as tmpdir:
             exporter = ExcelExporter(export_dir=tmpdir)
             records = [{"Name": "Test"}]
-            output_path = exporter.export(
-                records, sheet_name="Custom Sheet"
-            )
+            output_path = exporter.export(records, sheet_name="Custom Sheet")
 
             import pandas as pd
+
             xl = pd.ExcelFile(output_path)
             assert "Custom Sheet" in xl.sheet_names

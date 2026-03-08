@@ -60,6 +60,7 @@ class StorageBackend(ABC):
 #  Local Filesystem Backend
 # ─────────────────────────────────────────────────
 
+
 class LocalStorage(StorageBackend):
     """Store files on the local filesystem."""
 
@@ -104,6 +105,7 @@ class LocalStorage(StorageBackend):
 # ─────────────────────────────────────────────────
 #  S3-Compatible Backend
 # ─────────────────────────────────────────────────
+
 
 class S3Storage(StorageBackend):
     """Store files in an S3-compatible object store.
@@ -163,6 +165,7 @@ class S3Storage(StorageBackend):
 # ─────────────────────────────────────────────────
 #  Factory
 # ─────────────────────────────────────────────────
+
 
 def get_storage(backend: str | None = None) -> StorageBackend:
     """Return the configured storage backend instance."""

@@ -5,10 +5,8 @@ Covers upload, retrieval, listing, export, and error scenarios.
 """
 
 import io
-import os
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 
 pytestmark = pytest.mark.asyncio
@@ -125,7 +123,9 @@ class TestDocumentExport:
         response = await client.post(f"/api/v1/documents/{fake_id}/export")
         assert response.status_code == 404
 
-    async def test_export_pending_document_rejected(self, client: AsyncClient, sample_pdf_path: str):
+    async def test_export_pending_document_rejected(
+        self, client: AsyncClient, sample_pdf_path: str
+    ):
         # Upload (stays in pending since background task doesn't fully run in test)
         with open(sample_pdf_path, "rb") as f:
             upload_response = await client.post(

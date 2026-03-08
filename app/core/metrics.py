@@ -24,8 +24,10 @@ logger = get_logger(__name__)
 #  Metric Stores  (lightweight — no external deps)
 # ─────────────────────────────────────────────────
 
+
 class _Counter:
     """Thread-safe-ish counter (good enough for a single-process worker)."""
+
     __slots__ = ("_name", "_help", "_values")
 
     def __init__(self, name: str, helptext: str) -> None:
@@ -48,6 +50,7 @@ class _Counter:
 
 class _Histogram:
     """Minimal histogram that tracks sum, count, and buckets."""
+
     __slots__ = ("_name", "_help", "_sum", "_count", "_buckets", "_bucket_counts")
 
     DEFAULT_BUCKETS = (0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
@@ -143,18 +146,21 @@ def collect_metrics() -> str:
 
 # ─── FastAPI Middleware ──────────────────────────
 
+
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Record request count and latency for every HTTP request."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start = time.perf_counter()
         response = await call_next(request)
         duration = time.perf_counter() - start
 
         http_requests_total.inc(
-            {"method": request.method, "path": request.url.path, "status": str(response.status_code)}
+            {
+                "method": request.method,
+                "path": request.url.path,
+                "status": str(response.status_code),
+            }
         )
         http_request_duration_seconds.observe(duration)
 

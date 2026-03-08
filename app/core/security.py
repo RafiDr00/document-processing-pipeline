@@ -13,7 +13,6 @@ import hashlib
 import re
 import time
 from collections import defaultdict
-from typing import Optional
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
@@ -32,8 +31,8 @@ _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 async def verify_api_key(
-    api_key: Optional[str] = Security(_api_key_header),
-) -> Optional[str]:
+    api_key: str | None = Security(_api_key_header),
+) -> str | None:
     """
     Validate the X-API-Key header when API_KEY is configured.
 
@@ -57,6 +56,7 @@ async def verify_api_key(
 # ─────────────────────────────────────────────────
 #  Rate Limiting (in-memory fallback)
 # ─────────────────────────────────────────────────
+
 
 class _InMemoryRateLimiter:
     """Simple sliding-window rate limiter backed by a dict.

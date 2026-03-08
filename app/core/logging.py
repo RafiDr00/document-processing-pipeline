@@ -7,7 +7,7 @@ logging for development. Configured via environment variables.
 
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import get_settings
@@ -20,7 +20,7 @@ class JSONFormatter(logging.Formatter):
         import json
 
         log_entry: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),

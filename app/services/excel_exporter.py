@@ -20,6 +20,7 @@ settings = get_settings()
 
 class ExcelExportError(Exception):
     """Raised when Excel export fails."""
+
     pass
 
 

@@ -11,7 +11,7 @@ Falls back to immediate inline processing when Redis is unavailable
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -35,11 +35,13 @@ async def enqueue_job(document_id: str, file_path: str, **extra: Any) -> bool:
         if redis is None:
             return False
 
-        payload = json.dumps({
-            "document_id": document_id,
-            "file_path": file_path,
-            **extra,
-        })
+        payload = json.dumps(
+            {
+                "document_id": document_id,
+                "file_path": file_path,
+                **extra,
+            }
+        )
         await redis.lpush(QUEUE_NAME, payload)
         logger.info("Job enqueued", extra={"document_id": document_id})
         return True
@@ -48,7 +50,7 @@ async def enqueue_job(document_id: str, file_path: str, **extra: Any) -> bool:
         return False
 
 
-async def dequeue_job(timeout: int = 5) -> Optional[dict[str, Any]]:
+async def dequeue_job(timeout: int = 5) -> dict[str, Any] | None:
     """Block-pop the next job from the queue (used by the worker).
 
     Returns ``None`` when the timeout expires with no job available.
