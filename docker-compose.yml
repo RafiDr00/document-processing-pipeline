@@ -1,0 +1,115 @@
+# ──────────────────────────────────────────────────
+#  Document Processing Pipeline — Docker Compose
+#  Local development: API + Worker + PostgreSQL + Redis
+# ──────────────────────────────────────────────────
+
+services:
+  # ─── FastAPI Application ───
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: docpipeline-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/docpipeline
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=text
+      - UPLOAD_DIR=/app/uploads
+      - EXPORT_DIR=/app/exports
+      - STORAGE_BACKEND=local
+      - MAX_UPLOAD_SIZE_MB=50
+      - OCR_LANG=eng
+      - API_KEY=
+      - RATE_LIMIT_REQUESTS=120
+      - RATE_LIMIT_WINDOW_SECONDS=60
+    volumes:
+      - upload_data:/app/uploads
+      - export_data:/app/exports
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─── Background Worker ───
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: docpipeline-worker
+    command: ["python", "-m", "app.worker"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/docpipeline
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=text
+      - UPLOAD_DIR=/app/uploads
+      - EXPORT_DIR=/app/exports
+      - STORAGE_BACKEND=local
+      - OCR_LANG=eng
+    volumes:
+      - upload_data:/app/uploads
+      - export_data:/app/exports
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── PostgreSQL Database ───
+  db:
+    image: postgres:16-alpine
+    container_name: docpipeline-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=docpipeline
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── Redis (Queue + Rate Limiting) ───
+  redis:
+    image: redis:7-alpine
+    container_name: docpipeline-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  upload_data:
+    driver: local
+  export_data:
+    driver: local

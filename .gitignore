@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────────
+#  .gitignore — Document Processing Pipeline
+# ──────────────────────────────────────────────────
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application Data
+uploads/
+exports/
+logs/
+*.db
+test.db
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Docker
+.dockerignore
+
+# Distribution
+*.tar.gz
+*.whl
+
+# Temporary
+tmp/
+temp/
+*.tmp

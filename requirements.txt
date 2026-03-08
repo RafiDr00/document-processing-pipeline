@@ -1,0 +1,33 @@
+# ──────────────────────────────────────────────────
+#  Document Processing Pipeline — Python Dependencies
+# ──────────────────────────────────────────────────
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.18
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+aiosqlite==0.20.0
+
+# Data Validation & Settings
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# PDF Processing
+PyMuPDF==1.25.1
+pdf2image==1.17.0
+pytesseract==0.3.13
+opencv-python-headless==4.10.0.84
+
+# Data & Excel
+pandas==2.2.3
+openpyxl==3.1.5
+
+# Redis (queue + rate limiting + caching)
+redis[hiredis]==5.2.1
+
+# HTTP Client
+httpx==0.28.1
