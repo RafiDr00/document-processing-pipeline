@@ -1,0 +1,3 @@
+# Prevent git from modifying YAML file encoding
+*.yaml text eol=lf
+render.yaml -text
