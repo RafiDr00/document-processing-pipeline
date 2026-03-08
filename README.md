@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Async microservice for extracting structured data from PDF documents at scale.</strong><br>
-  Upload → Queue → Extract → Store → Export
+  Upload â†’ Queue â†’ Extract â†’ Store â†’ Export
 </p>
 
 <p align="center">
@@ -16,12 +16,12 @@
 </p>
 
 <!-- 
-▸ LIVE DEPLOYMENT
+â–¸ LIVE DEPLOYMENT
 -->
 <p align="center">
-  <a href="https://document-processing-pipeline.onrender.com/docs"><strong>🚀 Live API Docs</strong></a> &nbsp;·&nbsp;
-  <a href="https://document-processing-pipeline.onrender.com/health"><strong>Health</strong></a> &nbsp;·&nbsp;
-  <a href="https://document-processing-pipeline.onrender.com/metrics"><strong>Metrics</strong></a>
+  <a href="https://document-processing-pipeline-6q18.onrender.com/docs"><strong>ðŸš€ Live API Docs</strong></a> &nbsp;Â·&nbsp;
+  <a href="https://document-processing-pipeline-6q18.onrender.com/health"><strong>Health</strong></a> &nbsp;Â·&nbsp;
+  <a href="https://document-processing-pipeline-6q18.onrender.com/metrics"><strong>Metrics</strong></a>
 </p>
 
 ---
@@ -51,12 +51,12 @@ open http://localhost:8000/docs
 
 Most PDF scraping scripts run as one-off notebooks. This project takes that pattern and re-implements it as a **production microservice** with:
 
-- **Async everywhere** — FastAPI + asyncpg + redis.asyncio; zero blocking calls on the hot path
-- **Background job queue** — Redis-backed worker pool (LPUSH / BRPOP) with automatic fallback to in-process BackgroundTasks
-- **Storage abstraction** — Local filesystem or S3 via a single env var (`STORAGE_BACKEND`)
-- **Observability** — Prometheus-compatible `/metrics` endpoint (custom lightweight counters, histograms, gauges — no heavy deps)
-- **Security** — API-key auth (constant-time SHA-256 comparison), sliding-window rate limiting, filename sanitisation
-- **Content deduplication** — SHA-256 hashing of every upload; hash is stored and returned
+- **Async everywhere** â€” FastAPI + asyncpg + redis.asyncio; zero blocking calls on the hot path
+- **Background job queue** â€” Redis-backed worker pool (LPUSH / BRPOP) with automatic fallback to in-process BackgroundTasks
+- **Storage abstraction** â€” Local filesystem or S3 via a single env var (`STORAGE_BACKEND`)
+- **Observability** â€” Prometheus-compatible `/metrics` endpoint (custom lightweight counters, histograms, gauges â€” no heavy deps)
+- **Security** â€” API-key auth (constant-time SHA-256 comparison), sliding-window rate limiting, filename sanitisation
+- **Content deduplication** â€” SHA-256 hashing of every upload; hash is stored and returned
 - **Multi-stage Docker build**, non-root container, health checks, GitHub Actions CI
 
 ---
@@ -65,7 +65,7 @@ Most PDF scraping scripts run as one-off notebooks. This project takes that patt
 
 ```mermaid
 flowchart LR
-    Client -->|"POST /upload"| API["FastAPI<br/>Auth · Rate Limit · Metrics"]
+    Client -->|"POST /upload"| API["FastAPI<br/>Auth Â· Rate Limit Â· Metrics"]
     API -->|LPUSH| Redis["Redis 7<br/>Job Queue"]
     API -->|save| Storage["Storage<br/>Local / S3"]
     Redis -->|BRPOP| Worker["Worker Process"]
@@ -77,7 +77,7 @@ flowchart LR
 
 > Full diagrams (sequence, ER, deployment): [`docs/architecture.md`](docs/architecture.md)
 >
-> **Try it now:** open `frontend/index.html` in your browser for a zero-install test UI (upload PDF → view extracted JSON → download Excel).
+> **Try it now:** open `frontend/index.html` in your browser for a zero-install test UI (upload PDF â†’ view extracted JSON â†’ download Excel).
 
 ---
 
@@ -85,17 +85,17 @@ flowchart LR
 
 | Layer            | Technology                                         |
 |------------------|----------------------------------------------------|
-| **Web framework**| FastAPI 0.115 — async, OpenAPI docs, dependency injection |
+| **Web framework**| FastAPI 0.115 â€” async, OpenAPI docs, dependency injection |
 | **Database**     | PostgreSQL 16 + SQLAlchemy 2.0 async (asyncpg), tuned connection pool |
-| **Queue**        | Redis 7 — job queue, rate-limit counters           |
-| **PDF native**   | PyMuPDF (fitz) — fast C-backed text extraction     |
+| **Queue**        | Redis 7 â€” job queue, rate-limit counters           |
+| **PDF native**   | PyMuPDF (fitz) â€” fast C-backed text extraction     |
 | **PDF OCR**      | Tesseract + pdf2image + OpenCV                     |
 | **Excel export** | pandas + openpyxl with auto-format & smart sorting |
 | **Storage**      | Local FS or Amazon S3 (boto3), pluggable backend   |
 | **Metrics**      | Custom Prometheus exposition (zero external deps)   |
 | **Auth**         | API-key header + sliding-window rate limiter        |
 | **Container**    | Multi-stage Docker, non-root, healthcheck           |
-| **CI/CD**        | GitHub Actions — lint (ruff) → test → Docker build  |
+| **CI/CD**        | GitHub Actions â€” lint (ruff) â†’ test â†’ Docker build  |
 
 ---
 
@@ -103,41 +103,41 @@ flowchart LR
 
 ```
 document-processing-pipeline/
-├── app/
-│   ├── main.py                  # Application entry + lifespan events
-│   ├── worker.py                # Standalone Redis queue consumer
-│   ├── api/
-│   │   └── routes.py            # REST endpoints (upload, list, get, export, download)
-│   ├── core/
-│   │   ├── config.py            # Pydantic Settings (env-based)
-│   │   ├── logging.py           # Structured JSON / text logging
-│   │   ├── security.py          # API-key auth + rate limiting
-│   │   ├── redis.py             # Async Redis connection singleton
-│   │   └── metrics.py           # Prometheus counters, histograms, gauges
-│   ├── db/
-│   │   └── database.py          # SQLAlchemy async engine + session
-│   ├── models/
-│   │   └── document.py          # ORM models + Pydantic schemas
-│   └── services/
-│       ├── pdf_extractor.py     # Native + OCR extraction pipeline
-│       ├── excel_exporter.py    # Excel generation with formatting
-│       ├── storage.py           # Local / S3 storage abstraction
-│       └── queue.py             # Redis job queue helpers
-├── tests/
-│   ├── conftest.py              # Fixtures (SQLite, test client, sample PDFs)
-│   ├── test_api.py              # Endpoint tests (health, upload, retrieve, export)
-│   └── test_extraction.py       # Unit tests (extractor, exporter)
-├── docker/
-│   └── Dockerfile               # Multi-stage production image
-├── docs/
-│   └── architecture.md          # Mermaid diagrams (system, sequence, ER)
-├── .github/workflows/ci.yml     # Lint → Test (+ Redis) → Docker build
-├── docker-compose.yml           # API + Worker + PostgreSQL + Redis
-├── requirements.txt
-├── requirements-test.txt
-├── .env.example
-├── pyproject.toml
-└── LICENSE
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ main.py                  # Application entry + lifespan events
+â”‚   â”œâ”€â”€ worker.py                # Standalone Redis queue consumer
+â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â””â”€â”€ routes.py            # REST endpoints (upload, list, get, export, download)
+â”‚   â”œâ”€â”€ core/
+â”‚   â”‚   â”œâ”€â”€ config.py            # Pydantic Settings (env-based)
+â”‚   â”‚   â”œâ”€â”€ logging.py           # Structured JSON / text logging
+â”‚   â”‚   â”œâ”€â”€ security.py          # API-key auth + rate limiting
+â”‚   â”‚   â”œâ”€â”€ redis.py             # Async Redis connection singleton
+â”‚   â”‚   â””â”€â”€ metrics.py           # Prometheus counters, histograms, gauges
+â”‚   â”œâ”€â”€ db/
+â”‚   â”‚   â””â”€â”€ database.py          # SQLAlchemy async engine + session
+â”‚   â”œâ”€â”€ models/
+â”‚   â”‚   â””â”€â”€ document.py          # ORM models + Pydantic schemas
+â”‚   â””â”€â”€ services/
+â”‚       â”œâ”€â”€ pdf_extractor.py     # Native + OCR extraction pipeline
+â”‚       â”œâ”€â”€ excel_exporter.py    # Excel generation with formatting
+â”‚       â”œâ”€â”€ storage.py           # Local / S3 storage abstraction
+â”‚       â””â”€â”€ queue.py             # Redis job queue helpers
+â”œâ”€â”€ tests/
+â”‚   â”œâ”€â”€ conftest.py              # Fixtures (SQLite, test client, sample PDFs)
+â”‚   â”œâ”€â”€ test_api.py              # Endpoint tests (health, upload, retrieve, export)
+â”‚   â””â”€â”€ test_extraction.py       # Unit tests (extractor, exporter)
+â”œâ”€â”€ docker/
+â”‚   â””â”€â”€ Dockerfile               # Multi-stage production image
+â”œâ”€â”€ docs/
+â”‚   â””â”€â”€ architecture.md          # Mermaid diagrams (system, sequence, ER)
+â”œâ”€â”€ .github/workflows/ci.yml     # Lint â†’ Test (+ Redis) â†’ Docker build
+â”œâ”€â”€ docker-compose.yml           # API + Worker + PostgreSQL + Redis
+â”œâ”€â”€ requirements.txt
+â”œâ”€â”€ requirements-test.txt
+â”œâ”€â”€ .env.example
+â”œâ”€â”€ pyproject.toml
+â””â”€â”€ LICENSE
 ```
 
 ---
@@ -157,7 +157,7 @@ docker-compose up --build -d
 docker-compose logs -f api worker
 ```
 
-API → `http://localhost:8000` &nbsp;|&nbsp; Docs → `http://localhost:8000/docs` &nbsp;|&nbsp; Metrics → `http://localhost:8000/metrics`
+API â†’ `http://localhost:8000` &nbsp;|&nbsp; Docs â†’ `http://localhost:8000/docs` &nbsp;|&nbsp; Metrics â†’ `http://localhost:8000/metrics`
 
 ### Local Development
 
@@ -266,13 +266,13 @@ Every setting is driven by environment variables (see [.env.example](.env.exampl
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://…` | Async PostgreSQL DSN |
+| `DATABASE_URL` | `postgresql+asyncpg://â€¦` | Async PostgreSQL DSN |
 | `REDIS_URL` | *(empty)* | Redis DSN; empty = in-memory fallback |
 | `API_KEY` | *(empty)* | API key; empty = open access |
 | `RATE_LIMIT_REQUESTS` | `120` | Requests per window per IP |
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | Sliding window size |
 | `STORAGE_BACKEND` | `local` | `local` or `s3` |
-| `S3_BUCKET_NAME` / `S3_REGION` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` | — | Required when `STORAGE_BACKEND=s3` |
+| `S3_BUCKET_NAME` / `S3_REGION` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` | â€” | Required when `STORAGE_BACKEND=s3` |
 | `DB_POOL_SIZE` | `5` | SQLAlchemy pool core size |
 | `DB_MAX_OVERFLOW` | `10` | Extra connections under burst |
 | `MAX_UPLOAD_SIZE_MB` | `50` | Upload size cap |
@@ -301,7 +301,7 @@ Composite indexes: `(status, created_at)`, `(original_filename)`, `(document_id,
 ## Testing
 
 ```bash
-# All tests (SQLite — no Postgres needed)
+# All tests (SQLite â€” no Postgres needed)
 pytest
 
 # With coverage
@@ -343,7 +343,7 @@ Both platforms support Docker deployments:
 2. Set the root Dockerfile path: `docker/Dockerfile`
 3. Add environment variables: `DATABASE_URL`, `REDIS_URL`, `API_KEY`, `ENVIRONMENT=production`
 4. Set health check path: `/health`
-5. Deploy — the API is live at the provided URL
+5. Deploy â€” the API is live at the provided URL
 
 > Add a managed PostgreSQL and Redis add-on from the platform dashboard.
 
@@ -357,10 +357,10 @@ docker tag docpipeline:latest <account>.dkr.ecr.<region>.amazonaws.com/docpipeli
 docker push <account>.dkr.ecr.<region>.amazonaws.com/docpipeline:latest
 ```
 
-- **API task** — ECS Fargate, CMD default (uvicorn 4 workers), port 8000, ALB health `/health`
-- **Worker task** — same image, override CMD `["python", "-m", "app.worker"]`, no port mapping
-- **RDS** — PostgreSQL 16, `DB_POOL_SIZE=20`, `DB_MAX_OVERFLOW=30`
-- **ElastiCache** — Redis 7, single-node or cluster mode
+- **API task** â€” ECS Fargate, CMD default (uvicorn 4 workers), port 8000, ALB health `/health`
+- **Worker task** â€” same image, override CMD `["python", "-m", "app.worker"]`, no port mapping
+- **RDS** â€” PostgreSQL 16, `DB_POOL_SIZE=20`, `DB_MAX_OVERFLOW=30`
+- **ElastiCache** â€” Redis 7, single-node or cluster mode
 
 > Full production guide with monitoring, backup, and security hardening: [`docs/deployment.md`](docs/deployment.md)
 
@@ -369,7 +369,7 @@ docker push <account>.dkr.ecr.<region>.amazonaws.com/docpipeline:latest
 ## CI/CD Pipeline
 
 ```
-lint (ruff) → test (pytest + Redis service) → docker build (buildx + GHA cache)
+lint (ruff) â†’ test (pytest + Redis service) â†’ docker build (buildx + GHA cache)
 ```
 
 All stages run on every push to `main` / `develop` and every PR targeting `main`.
@@ -378,11 +378,11 @@ All stages run on every push to `main` / `develop` and every PR targeting `main`
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT â€” see [LICENSE](LICENSE).
 
 ---
 
 <p align="center">
   <strong>Document Processing Pipeline v2.0</strong><br>
-  FastAPI · PostgreSQL · Redis · Docker
+  FastAPI Â· PostgreSQL Â· Redis Â· Docker
 </p>
