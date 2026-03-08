@@ -77,13 +77,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install test tooling first (all pure wheels — guaranteed to succeed)
-          pip install pytest==8.3.4 pytest-asyncio==0.24.0 pytest-cov==6.0.0 \
-                      coverage httpx==0.28.1 aiosqlite==0.20.0
-          # Install application dependencies
+          pip install -r requirements-test.txt
           pip install -r requirements.txt
-          # Confirm pytest-cov is available
-          python -c "import pytest_cov; print('pytest-cov', pytest_cov.__version__)"
 
       - name: Run tests with coverage
         env:

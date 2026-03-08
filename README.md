@@ -16,13 +16,13 @@
 </p>
 
 <!-- 
-▸ LIVE DEPLOYMENT (uncomment once deployed)
-<p align="center">
-  <a href="https://your-service-url/docs"><strong>Live API Docs</strong></a> · 
-  <a href="https://your-service-url/metrics"><strong>Metrics</strong></a> · 
-  <a href="https://your-service-url/health"><strong>Health</strong></a>
-</p>
+▸ LIVE DEPLOYMENT
 -->
+<p align="center">
+  <a href="https://document-processing-pipeline.onrender.com/docs"><strong>🚀 Live API Docs</strong></a> &nbsp;·&nbsp;
+  <a href="https://document-processing-pipeline.onrender.com/health"><strong>Health</strong></a> &nbsp;·&nbsp;
+  <a href="https://document-processing-pipeline.onrender.com/metrics"><strong>Metrics</strong></a>
+</p>
 
 ---
 
